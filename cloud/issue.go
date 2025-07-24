@@ -1016,6 +1016,24 @@ func (s *IssueService) UpdateWorklogRecord(ctx context.Context, issueID, worklog
 	return responseRecord, resp, nil
 }
 
+// DeleteWorklogRecord deletes a worklog record.
+//
+// https://docs.atlassian.com/software/jira/docs/api/REST/7.1.2/#api/2/issue-deleteWorklog
+func (s *IssueService) DeleteWorklogRecord(ctx context.Context, issueID, worklogID string) (*Response, error) {
+	apiEndpoint := fmt.Sprintf("rest/api/2/issue/%s/worklog/%s", issueID, worklogID)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, apiEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.client.Do(req, nil)
+	if err != nil {
+		jerr := NewJiraError(resp, err)
+		return resp, jerr
+	}
+	// No content is returned, so we just return the response
+	return resp, nil
+}
+
 // AddLink adds a link between two issues.
 //
 // Jira API docs: https://docs.atlassian.com/jira/REST/latest/#api/2/issueLink
