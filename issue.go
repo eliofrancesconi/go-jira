@@ -613,7 +613,7 @@ type RemoteLinkStatus struct {
 // This can be an issue id, or an issue key.
 // If the issue cannot be found via an exact match, Jira will also look for the issue in a case-insensitive way, or by looking to see if the issue was moved.
 //
-// The given options will be appended to the query string
+// # The given options will be appended to the query string
 //
 // Jira API docs: https://docs.atlassian.com/jira/REST/latest/#api/2/issue-getIssue
 func (s *IssueService) GetWithContext(ctx context.Context, issueID string, options *GetQueryOptions) (*Issue, *Response, error) {
@@ -1059,6 +1059,26 @@ func (s *IssueService) UpdateWorklogRecord(issueID, worklogID string, record *Wo
 	return s.UpdateWorklogRecordWithContext(context.Background(), issueID, worklogID, record, options...)
 }
 
+// DeleteWorklogRecord deletes a worklog record.
+//
+// https://docs.atlassian.com/software/jira/docs/api/REST/7.1.2/#api/2/issue-deleteWorklog
+func (s *IssueService) DeleteWorklogRecord(ctx context.Context, issueID, worklogID string) (*Response, error) {
+	apiEndpoint := fmt.Sprintf("rest/api/2/issue/%s/worklog/%s", issueID, worklogID)
+	req, err := s.client.NewRequest(http.MethodDelete, apiEndpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := s.client.Do(req, nil)
+	if err != nil {
+		jerr := NewJiraError(resp, err)
+		return resp, jerr
+	}
+	// No content is returned, so we just return the response
+	return resp, nil
+}
+
+// AddLink adds a link between two issues.
+
 // AddLinkWithContext adds a link between two issues.
 //
 // Jira API docs: https://docs.atlassian.com/jira/REST/latest/#api/2/issueLink
@@ -1295,15 +1315,17 @@ func (s *IssueService) DoTransitionWithPayload(ticketID, payload interface{}) (*
 }
 
 // InitIssueWithMetaAndFields returns Issue with with values from fieldsConfig properly set.
-//  * metaProject should contain metaInformation about the project where the issue should be created.
-//  * metaIssuetype is the MetaInformation about the Issuetype that needs to be created.
-//  * fieldsConfig is a key->value pair where key represents the name of the field as seen in the UI
-//		And value is the string value for that particular key.
+//   - metaProject should contain metaInformation about the project where the issue should be created.
+//   - metaIssuetype is the MetaInformation about the Issuetype that needs to be created.
+//   - fieldsConfig is a key->value pair where key represents the name of the field as seen in the UI
+//     And value is the string value for that particular key.
+//
 // Note: This method doesn't verify that the fieldsConfig is complete with mandatory fields. The fieldsConfig is
-//		 supposed to be already verified with MetaIssueType.CheckCompleteAndAvailable. It will however return
-//		 error if the key is not found.
-//		 All values will be packed into Unknowns. This is much convenient. If the struct fields needs to be
-//		 configured as well, marshalling and unmarshalling will set the proper fields.
+//
+//	supposed to be already verified with MetaIssueType.CheckCompleteAndAvailable. It will however return
+//	error if the key is not found.
+//	All values will be packed into Unknowns. This is much convenient. If the struct fields needs to be
+//	configured as well, marshalling and unmarshalling will set the proper fields.
 func InitIssueWithMetaAndFields(metaProject *MetaProject, metaIssuetype *MetaIssueType, fieldsConfig map[string]string) (*Issue, error) {
 	issue := new(Issue)
 	issueFields := new(IssueFields)
